@@ -62,7 +62,8 @@ def main():
     dataset = load_dataset('textdetox/multilingual_paradetox')
     dataset = add_language_column(dataset)
 
-    tokenizer = T5Tokenizer.from_pretrained(config.model_type)
+    tokenizer = T5Tokenizer.from_pretrained(config.model_type, use_fast=True)
+    tokenizer.add_prefix_space = False
     model = T5ForConditionalGeneration.from_pretrained(config.model_type)
 
     encoded_dataset = dataset.map(preprocess_function, batched=True, 
