@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
+import sys
+import argparse
+import os
 from transformers import T5Tokenizer, T5ForConditionalGeneration, Trainer, TrainingArguments
 import datasets
 from datasets import load_dataset
+from omegaconf import OmegaConf
+
+
+def get_args(argv):
+    parser = argparse.ArgumentParser(description='Train model')
+    parser.add_argument('--config', type=str, default='configs/default.yaml',
+                        help='Config file path')
+    return parser.parse_args(argv)
 
 
 LANG_PROMPTS = {
@@ -17,14 +28,14 @@ LANG_PROMPTS = {
 }
 
 
-def preprocess_function(examples, tokenizer):
+def preprocess_function(examples, tokenizer, max_length=256):
     inputs = [LANG_PROMPTS[lang] + text for lang, text in zip(examples['language'], examples['toxic_sentence'])]
     targets = examples['neutral_sentence']
     
-    model_inputs = tokenizer(inputs, max_length=max(len(s) for s in inputs),
+    model_inputs = tokenizer(inputs, max_length=256,
                              truncation=True, padding='max_length')
 
-    labels = tokenizer(targets, max_length=max(len(s) for s in targets),
+    labels = tokenizer(targets, max_length=256,
                        truncation=True, padding='max_length').input_ids
     
     model_inputs['labels'] = [[label if label != tokenizer.pad_token_id else -100 for label in l] for l in labels]
@@ -53,12 +64,10 @@ def main():
     encoded_dataset = dataset.map(preprocess_function, batched=True, fn_kwargs={'tokenizer': tokenizer})
     train_data = encoded_dataset.train_test_split(test_size=0.2)
 
-
-    # Аргументы тренировки
     training_args = TrainingArguments(
         output_dir='./results',
         num_train_epochs=3,
-        per_device_train_batch_size=16,
+        per_device_train_batch_size=1,
         warmup_steps=500,
         weight_decay=0.01,
         logging_dir='./logs',
