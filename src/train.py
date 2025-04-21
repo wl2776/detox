@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 import sys
-import argparse
 import os
+import argparse
 from transformers import T5Tokenizer, T5ForConditionalGeneration, Trainer, TrainingArguments
 import datasets
 from datasets import load_dataset
 from omegaconf import OmegaConf
+import mlflow
 
 
 def get_args(argv):
@@ -64,8 +65,12 @@ def main():
     tokenizer = T5Tokenizer.from_pretrained(config.model_type)
     model = T5ForConditionalGeneration.from_pretrained(config.model_type)
 
-    encoded_dataset = dataset.map(preprocess_function, batched=True, fn_kwargs={'tokenizer': tokenizer, 'max_length': config.tokenizer.max_length})
+    encoded_dataset = dataset.map(preprocess_function, batched=True, 
+                                  fn_kwargs={'tokenizer': tokenizer, 'max_length': config.tokenizer.max_length})
     train_data = encoded_dataset.train_test_split(test_size=0.2)
+
+    mlflow.set_tracking_uri(os.environ.get("MLFLOW_TRACKING_URI", config.mlflow.uri))
+    mlflow.set_experiment(config.mlflow.experiment_name)
 
     training_args = TrainingArguments(**config.train)
 
@@ -76,7 +81,8 @@ def main():
         eval_dataset=train_data['test'],
     )
 
-    trainer.train()
+    with mlflow.start_run() as run:
+        trainer.train()
 
     model.save_pretrained('./final_model')
     tokenizer.save_pretrained('./final_model')
