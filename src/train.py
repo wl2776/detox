@@ -32,10 +32,10 @@ def preprocess_function(examples, tokenizer, max_length=256):
     inputs = [LANG_PROMPTS[lang] + text for lang, text in zip(examples['language'], examples['toxic_sentence'])]
     targets = examples['neutral_sentence']
     
-    model_inputs = tokenizer(inputs, max_length=256,
+    model_inputs = tokenizer(inputs, max_length=max_length,
                              truncation=True, padding='max_length')
 
-    labels = tokenizer(targets, max_length=256,
+    labels = tokenizer(targets, max_length=max_length,
                        truncation=True, padding='max_length').input_ids
     
     model_inputs['labels'] = [[label if label != tokenizer.pad_token_id else -100 for label in l] for l in labels]
@@ -55,26 +55,19 @@ def  add_language_column(dataset):
      
 
 def main():
+    args = get_args(sys.argv[1:])
+    config = OmegaConf.load(args.config)
+
     dataset = load_dataset('textdetox/multilingual_paradetox')
     dataset = add_language_column(dataset)
 
-    tokenizer = T5Tokenizer.from_pretrained('t5-small')
-    model = T5ForConditionalGeneration.from_pretrained('t5-small')
+    tokenizer = T5Tokenizer.from_pretrained(config.model_type)
+    model = T5ForConditionalGeneration.from_pretrained(config.model_type)
 
-    encoded_dataset = dataset.map(preprocess_function, batched=True, fn_kwargs={'tokenizer': tokenizer})
+    encoded_dataset = dataset.map(preprocess_function, batched=True, fn_kwargs={'tokenizer': tokenizer, 'max_length': config.tokenizer.max_length})
     train_data = encoded_dataset.train_test_split(test_size=0.2)
 
-    training_args = TrainingArguments(
-        output_dir='./results',
-        num_train_epochs=3,
-        per_device_train_batch_size=1,
-        warmup_steps=500,
-        weight_decay=0.01,
-        logging_dir='./logs',
-        save_total_limit=2,
-        learning_rate=1e-4,
-        gradient_accumulation_steps=2,
-    )
+    training_args = TrainingArguments(**config.train)
 
     trainer = Trainer(
         model=model,
