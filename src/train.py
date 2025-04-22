@@ -74,6 +74,7 @@ def main():
     mlflow.set_experiment(config.mlflow.experiment_name)
 
     training_args = TrainingArguments(**config.train)
+    training_args.set_logging(strategy="steps")
 
     trainer = Trainer(
         model=model,
