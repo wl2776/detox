@@ -1,4 +1,4 @@
-model_type: t5-small
+model_type: t5-3b
 
 tokenizer:
   max_length: 256
@@ -13,7 +13,7 @@ train:
   logging_dir: './logs'
   save_total_limit: 2
   learning_rate: 1e-4
-  gradient_accumulation_steps: 2
+  gradient_accumulation_steps: 1
 
 log:
   log_interval: 100
