@@ -14,6 +14,7 @@ def get_args(argv):
     parser.add_argument('-i', '--input', type=Path, help='input tsv', required=True)
     parser.add_argument('-o', '--output', type=Path, help='output tsv')
     parser.add_argument('-m', '--model', type=Path, help='path to model')
+    parser.add_argument('--rename-columns', action='store_true')
     return parser.parse_args(argv)
 
 
@@ -62,6 +63,7 @@ def generate_predictions(model, tokenizer, dataset, batch_size=32, device='cpu')
             decoded_outputs = tokenizer.batch_decode(outputs, skip_special_tokens=True)
             predictions.extend(decoded_outputs)
     
+    predictions = ['.' if p == '' else p for p in predictions]
     return predictions
 
 def main():
@@ -77,8 +79,8 @@ def main():
                                   fn_kwargs={'tokenizer': tokenizer})  #, 'max_length': config.tokenizer.max_length})
     
     df['neutral_sentence'] = generate_predictions(model, tokenizer, encoded_dataset, device='cuda')
-    df['neutral_sentence'].fillna('')
-    df.rename(columns={'toxic_sentence': 'toxic_text', 'neutral_sentence': 'neutral_text'}, inplace=True)
+    if args.rename_columns:
+        df.rename(columns={'toxic_sentence': 'toxic_text', 'neutral_sentence': 'neutral_text'}, inplace=True)
     args.output.parent.mkdir(exist_ok=True, parents=True)
     df.to_csv(args.output, sep='\t', header=True, index=False)
 
