@@ -5,10 +5,10 @@ tokenizer:
 
 train:
   output_dir: './results'
-  num_train_epochs: 3000
+  num_train_epochs: 500
   per_device_eval_batch_size: 4
   per_device_train_batch_size: 4
-  warmup_steps: 500
+  warmup_steps: 0
   weight_decay: 0.01
   logging_dir: './logs'
   save_total_limit: 2
