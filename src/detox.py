@@ -78,8 +78,9 @@ def main():
     
     df['neutral_sentence'] = generate_predictions(model, tokenizer, encoded_dataset, device='cuda')
     df['neutral_sentence'].fillna('')
+    df.rename(columns={'toxic_sentence': 'toxic_text', 'neutral_sentence': 'neutral_text'}, inplace=True)
     args.output.parent.mkdir(exist_ok=True, parents=True)
-    df.to_csv(args.output, sep='\t')
+    df.to_csv(args.output, sep='\t', header=True, index=False)
 
 
 if __name__ == '__main__':
