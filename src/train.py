@@ -43,7 +43,7 @@ def preprocess_function(examples, tokenizer, max_length=256):
     return model_inputs
 
 
-def  add_language_column(dataset):
+def add_language_column(dataset):
     preprocessed_dataset = []
     for lang_code, sub_dataset in dataset.items():
         def add_language_column(example):
